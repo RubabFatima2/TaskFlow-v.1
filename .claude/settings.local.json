@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/integration/test_health.py::TestHealthCheck::test_health_check_success tests/unit/test_task_service.py::TestTaskService::test_update_task_title -v)",
+      "Bash(python -m pytest tests/integration/test_health.py::TestHealthCheck::test_health_check_success -v)"
+    ]
+  }
+}
