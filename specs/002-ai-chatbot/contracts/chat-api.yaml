@@ -1,0 +1,343 @@
+openapi: 3.0.3
+info:
+  title: TaskFlow2 AI Chatbot API
+  description: |
+    AI-powered chat interface for task management using natural language.
+    Enables users to create, view, update, complete, and delete tasks through conversational interaction.
+  version: 1.0.0
+  contact:
+    name: TaskFlow2 Team
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+  - url: https://api.taskflow2.com/api/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /chat:
+    post:
+      summary: Send chat message
+      description: |
+        Send a user message to the AI chatbot. The chatbot will interpret the message,
+        invoke appropriate MCP tools (task operations), and return a natural language response.
+
+        Conversation history (last 20 messages) is automatically loaded for context.
+        If conversation_id is omitted, a new conversation is created.
+      operationId: sendChatMessage
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              newConversation:
+                summary: Start new conversation
+                value:
+                  message: "add buy groceries"
+              continueConversation:
+                summary: Continue existing conversation
+                value:
+                  conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                  message: "show my tasks"
+      responses:
+        '200':
+          description: Chat message processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                taskCreated:
+                  summary: Task created via chat
+                  value:
+                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                    response: "I've added 'buy groceries' to your task list."
+                    tool_calls:
+                      - tool_name: "add_task"
+                        input:
+                          user_id: "user_123"
+                          title: "buy groceries"
+                        output:
+                          success: true
+                          task:
+                            id: "task_456"
+                            title: "buy groceries"
+                            description: ""
+                            completed: false
+                            created_at: "2026-04-25T12:30:00Z"
+                        success: true
+                    message_id: "msg_789"
+                    timestamp: "2026-04-25T12:30:01Z"
+                tasksList:
+                  summary: Tasks listed via chat
+                  value:
+                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                    response: "You have 3 tasks:\n1. Buy groceries (pending)\n2. Call dentist (pending)\n3. Write report (completed)"
+                    tool_calls:
+                      - tool_name: "list_tasks"
+                        input:
+                          user_id: "user_123"
+                          status: "all"
+                        output:
+                          success: true
+                          tasks:
+                            - id: "task_1"
+                              title: "Buy groceries"
+                              completed: false
+                            - id: "task_2"
+                              title: "Call dentist"
+                              completed: false
+                            - id: "task_3"
+                              title: "Write report"
+                              completed: true
+                          count: 3
+                        success: true
+                    message_id: "msg_790"
+                    timestamp: "2026-04-25T12:30:05Z"
+        '400':
+          description: Invalid request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Message too long
+                  value:
+                    error: "Message exceeds maximum length of 5000 characters"
+                    error_code: "VALIDATION_ERROR"
+                    status: 400
+        '401':
+          description: Unauthorized (missing or invalid JWT token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  summary: Missing JWT token
+                  value:
+                    error: "Authentication required"
+                    error_code: "INVALID_TOKEN"
+                    status: 401
+        '403':
+          description: Forbidden (user attempting to access another user's conversation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                accessDenied:
+                  summary: Access denied to conversation
+                  value:
+                    error: "You do not have access to this conversation"
+                    error_code: "UNAUTHORIZED"
+                    status: 403
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Conversation not found
+                  value:
+                    error: "Conversation not found"
+                    error_code: "CONVERSATION_NOT_FOUND"
+                    status: 404
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Server error
+                  value:
+                    error: "An error occurred. Please try again."
+                    error_code: "INTERNAL_ERROR"
+                    status: 500
+        '503':
+          description: AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                aiServiceDown:
+                  summary: Gemini API unavailable
+                  value:
+                    error: "AI service temporarily unavailable. Please try again."
+                    error_code: "AI_SERVICE_ERROR"
+                    status: 503
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token issued by Better Auth on login.
+        Include in Authorization header: `Authorization: Bearer <token>`
+
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: |
+            Optional. UUID of existing conversation to continue.
+            If omitted, a new conversation is created.
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: User's message text
+          example: "add buy groceries"
+
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - response
+        - tool_calls
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: UUID of the conversation (new or existing)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        response:
+          type: string
+          description: AI-generated natural language response
+          example: "I've added 'buy groceries' to your task list."
+        tool_calls:
+          type: array
+          description: List of MCP tools invoked during this request
+          items:
+            $ref: '#/components/schemas/ToolCall'
+        message_id:
+          type: string
+          format: uuid
+          description: UUID of the assistant's message
+          example: "msg_789"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of response
+          example: "2026-04-25T12:30:01Z"
+
+    ToolCall:
+      type: object
+      required:
+        - tool_name
+        - input
+        - output
+        - success
+      properties:
+        tool_name:
+          type: string
+          enum:
+            - add_task
+            - list_tasks
+            - complete_task
+            - update_task
+            - delete_task
+          description: Name of the MCP tool invoked
+          example: "add_task"
+        input:
+          type: object
+          description: Input parameters passed to the tool
+          example:
+            user_id: "user_123"
+            title: "buy groceries"
+        output:
+          type: object
+          description: Result returned by the tool
+          example:
+            success: true
+            task:
+              id: "task_456"
+              title: "buy groceries"
+              completed: false
+        success:
+          type: boolean
+          description: Whether the tool execution succeeded
+          example: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - error_code
+        - status
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Message exceeds maximum length of 5000 characters"
+        error_code:
+          type: string
+          enum:
+            - INVALID_TOKEN
+            - CONVERSATION_NOT_FOUND
+            - AI_SERVICE_ERROR
+            - VALIDATION_ERROR
+            - UNAUTHORIZED
+            - INTERNAL_ERROR
+          description: Machine-readable error code
+          example: "VALIDATION_ERROR"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+
+    Task:
+      type: object
+      description: Task entity (from Phase 2)
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "task_456"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Buy groceries"
+        description:
+          type: string
+          maxLength: 2000
+          example: "Milk, eggs, bread"
+        completed:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-25T12:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-04-25T12:30:00Z"
+
+tags:
+  - name: Chat
+    description: AI chatbot endpoints for natural language task management

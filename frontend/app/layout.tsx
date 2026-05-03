@@ -33,6 +33,7 @@ import { Syne, DM_Sans } from 'next/font/google';
 import { AuthProvider } from '@/context/AuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import NotificationProvider from '@/components/providers/NotificationProvider';
+import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import './globals.css';
 
 /* ─── Fonts ─────────────────────────────────────────────── */

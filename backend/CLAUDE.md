@@ -22,4 +22,4 @@
 - Connection string from environment variable: DATABASE_URL
  
 ## Running
-uvicorn main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000

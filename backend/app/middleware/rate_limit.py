@@ -87,3 +87,8 @@ async def auth_rate_limit(request: Request):
 async def tasks_rate_limit(request: Request):
     """Rate limit for task endpoints: 30 requests per minute"""
     await rate_limiter.check_rate_limit(request, max_requests=30, window_seconds=60)
+
+
+async def chat_rate_limit(request: Request):
+    """Rate limit for chat endpoints: 30 requests per minute"""
+    await rate_limiter.check_rate_limit(request, max_requests=30, window_seconds=60)

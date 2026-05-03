@@ -1,0 +1,46 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node
+node_modules/
+.next/
+out/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Testing / Coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.coverage
+
+# Logs
+*.log
+
+# Your files
+output.md
+HackathonII.md
+Hackathon II - Todo Spec-Driven Development.docx
+PROFESSIONAL_AUDIT_REPORT

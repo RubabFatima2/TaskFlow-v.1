@@ -83,7 +83,9 @@ async def startup_event():
 
 # Register routes
 from app.routes import auth, tasks, notifications
+from app.routes import chat
 
 app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(notifications.router)
+app.include_router(chat.router)
