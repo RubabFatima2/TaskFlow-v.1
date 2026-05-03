@@ -21,9 +21,14 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
 
+    # Gemini API (Phase 3)
+    GEMINI_API_KEY: str
+    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
+
     # Rate Limiting
     AUTH_RATE_LIMIT: str = "5/minute"  # 5 requests per minute for auth endpoints
     TASKS_RATE_LIMIT: str = "30/minute"  # 30 requests per minute for task endpoints
+    CHAT_RATE_LIMIT: str = "30/minute"  # 30 requests per minute for chat endpoint
 
     class Config:
         env_file = ".env"

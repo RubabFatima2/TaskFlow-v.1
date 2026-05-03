@@ -25,22 +25,27 @@ if "postgresql" in async_database_url:
 
 # Determine connect_args based on database type
 connect_args = {}
+engine_kwargs = {
+    "echo": settings.ENVIRONMENT == "development",
+    "future": True,
+}
+
 if "postgresql" in async_database_url:
     connect_args = {"ssl": "require"}  # Enable SSL for PostgreSQL
+    # PostgreSQL specific pooling settings
+    engine_kwargs.update({
+        "pool_size": 20,
+        "max_overflow": 10,
+        "pool_pre_ping": True,
+        "pool_recycle": 3600,
+    })
 elif "sqlite" in async_database_url:
     connect_args = {"check_same_thread": False}  # SQLite-specific
 
-# Create async engine with connection pooling and timeout settings
-engine = create_async_engine(
-    async_database_url,
-    echo=settings.ENVIRONMENT == "development",
-    future=True,
-    connect_args=connect_args,
-    pool_size=20,  # Maximum number of connections in the pool
-    max_overflow=10,  # Maximum overflow connections beyond pool_size
-    pool_pre_ping=True,  # Verify connections before using them
-    pool_recycle=3600,  # Recycle connections after 1 hour
-)
+engine_kwargs["connect_args"] = connect_args
+
+# Create async engine
+engine = create_async_engine(async_database_url, **engine_kwargs)
 
 # Create async session factory
 async_session_maker = sessionmaker(

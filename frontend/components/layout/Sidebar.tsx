@@ -103,6 +103,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
   const navItems = [
     { name: 'Dashboard', href: '/tasks', icon: LayoutDashboard },
     { name: 'Tasks',     href: '/tasks', icon: CheckSquare },
+    { name: 'AI Chat',   href: '/chat',  icon: CheckCircle2 },
   ];
 
   const isActive = (href: string) => pathname === href;
